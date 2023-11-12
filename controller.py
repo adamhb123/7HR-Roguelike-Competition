@@ -4,10 +4,10 @@ from engine import Map, Position, Tile, Event, TileType
 from entities import PlayerEntity
 
 key_to_direction = {
-    "KEY_UP" : 0,
-    "KEY_RIGHT" : 1,
-    "KEY_DOWN" : 2,
-    "KEY_LEFT" : 3
+    "w" : 0, # Up
+    "d" : 1, # Right
+    "s" : 2, # Down
+    "a" : 3  # Left
 }
 
 @dataclass
@@ -16,6 +16,7 @@ class InputResponse:
     to_tile: Tile
     from_pos: Position
     to_pos: Position
+
 
 class Controller:
     def __init__(self, map: Map, player: PlayerEntity):
@@ -58,6 +59,7 @@ class Controller:
         
     def handle_input(self, key: str) -> Optional[InputResponse]:
         player_pos = self._map._find_tiles(TileType.PLAYER)[0]
+        print("Key to dir: ", key)
         if key in key_to_direction:
             return self._check_valid_move(player_pos, key_to_direction[key])
         

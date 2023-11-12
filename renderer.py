@@ -33,9 +33,9 @@ class Renderer:
             self.render()
             key = self.mapscr.getkey()
             print(key)
-            print(type(key))
             input_response = self._controller.handle_input(key)
-            if input_response.event != Event.NULL:
+            print(input_response)
+            if input_response and input_response.event != Event.NULL:
                 self._map.move_entity(input_response.from_pos, input_response.to_pos)
                 self._map.handle_event(input_response.event, input_response.to_tile, input_response.to_pos)
                 self._map.entities_step()
@@ -61,8 +61,8 @@ class Renderer:
     def render(self):
         # Render map
         for i, y in enumerate(self._map.state):
-          print(y[0].type)
-          print(self.tile_render_map[y[0].type])
+          # print(y[0].type)
+          # print(self.tile_render_map[y[0].type])
           line = "".join(map(lambda tile: self.tile_render_map[tile.type], y))
           self.mapscr.addstr(i, 0, line)
         texts = self._get_infoscr_text()
@@ -75,7 +75,7 @@ class Renderer:
 
 def test_renderer():
     map = Map(Size(72, 15))
-    map.generate_rooms(10000,(2,5),(2,5))
+    map.generate_rooms(1000,(2,5),(2,5))
     map._place_entity_randomly(Tile(TileType.PLAYER, PlayerEntity(100,10)))
     player = PlayerEntity(100, 10)
     controller = Controller(map, player)
