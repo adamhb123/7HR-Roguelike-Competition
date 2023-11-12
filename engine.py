@@ -139,10 +139,8 @@ class Map:
             if tile.type == TileType.KEY:
                 player.entity.keys += 1
                 print(f"PE KEYS: {player.entity.keys}")
-                #self.state[tile_pos.y][tile_pos.x] = EmptyTileSingleton
             elif tile.type == TileType.GOLD:
                 player.entity.gold += 1
-                #self.state[tile_pos.y][tile_pos.x] = EmptyTileSingleton
 
         
 
