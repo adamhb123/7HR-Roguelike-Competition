@@ -123,9 +123,12 @@ class Map:
         self.reset_state()
         self.generate_rooms(1000,(2,5),(2,5))
         self._place_entity_randomly(Tile(TileType.PLAYER, player_entity))
-        self.generate_enemies(5)
+        enemy_count = random.randint(1+int(player_entity.keys*1.5), 2+player_entity.keys*2)
+        self.generate_enemies(enemy_count)
         self._place_entity_randomly(Tile(TileType.KEY))
-        self._place_entity_randomly(Tile(TileType.GOLD))
+        gold_count = random.randint(2+player_entity.keys, 2+player_entity.keys*2)
+        for _ in range(0, gold_count):
+            self._place_entity_randomly(Tile(TileType.GOLD))
         self.generate_corridors(self.renderer.render_step)
 
 
@@ -142,19 +145,14 @@ class Map:
                 else:
                     tile.entity.attack(player.entity)
             if player.entity.health <= 0:
-                return -1
+                self.renderer.shutdown()
             elif tile.entity.health <= 0:
-                print(tile)
-                #self.state[tile_pos.y][tile_pos.x] = EmptyTileSingleton
                 player.entity.gold += tile.entity.drop()
                 if tile.entity.stole_key:
                     self.handle_event(Event.PICKUP, Tile(TileType.KEY))
         elif event == Event.PICKUP:
-            print("EVENT PICKUP: ", tile)
-            print("IS KEY? ", tile.type == TileType.KEY)
             if tile.type == TileType.KEY:
                 player.entity.keys += 1
-                print(f"PE KEYS: {player.entity.keys}")
                 self.initialize_game(player.entity)
             elif tile.type == TileType.GOLD:
                 player.entity.gold += 1
@@ -167,15 +165,6 @@ class Map:
 
     def _update_rooms(self):
         for room in self.rooms:
-            """# Place horizontal walls
-            print(self.state)
-            for x in range(room.x, room.x + room.w):
-                self.state[room.y][x] = Tile.WALL.value
-                self.state[room.y+room.h][x] = Tile.WALL.value
-            # Place vertical walls
-            for y in range(room.y, room.y+room.h):
-                self.state[y][room.x] = Tile.WALL.value
-                self.state[y][room.x+room.w] = Tile.WALL.value"""
             # Carve room
             for y in range(room.position.y, room.position.y+room.size.h):
                 for x in range(room.position.x, room.position.x+room.size.w):
@@ -184,10 +173,8 @@ class Map:
     def _place_room(self, position: Position, size: Size):
         new_room = Rect(position, size)
         if self.rooms and new_room.collides(self.rooms):
-            #print(f"Can't place room: {new_room}")
             return False
         self.rooms.append(new_room)
-        # print(new_room)
         self._update_rooms()
         return True
     
@@ -223,7 +210,6 @@ class Map:
     def move_entity(self, from_position: Position, to_position: Position):
         to_tile = self.get_tile_at(to_position)
         if to_tile.type != TileType.PLAYER:
-            print(to_tile.type)
             self.state[to_position.y][to_position.x] = self.state[from_position.y][from_position.x]
             self.state[from_position.y][from_position.x] = EmptyTileSingleton
 
@@ -255,19 +241,17 @@ class Map:
                         #y = random.randint(room_a.position.)
                         if room_a.position.y > room_b.position.y:
                            room_a, room_b = room_b, room_a
-                        # print(room_a, room_b)
                         y = random.randint(room_a.position.y + room_a.size.h, room_b.position.y)
                         point_a = Position(room_a.position.x + random.randint(0, room_a.size.w),
                                         room_a.position.y + room_a.size.h)
                         point_b = Position(room_b.position.x + random.randint(0, room_b.size.w), room_b.position.y)
                         while point_a.y != y:
-                            # print(point_a.y, y)
                             self._carve(point_a)
                             point_a.y += 1
                         while point_b.y != y:
-                            # print(point_b.y, y)
                             self._carve(point_b)
                             point_b.y -= 1
+                        # Stopped implementing algo here because the map falling apart is now a game feature :)
                     elif direction == 1: # Then horizontal
                         if room_a.position.x > room_b.position.x:
                             room_a, room_b = room_b, room_a
@@ -282,6 +266,7 @@ class Map:
                         while point_b.x != x:
                             self._carve(point_b)
                             point_b.x -= 1
+                        # Stopped implementing algo here because the map falling apart is now a game feature :)
                 result = render_step()
                 if result == -1: # Triggers game reset
                     return

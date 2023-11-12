@@ -1,6 +1,6 @@
 import curses
 from controller import Controller
-from engine import Rect, Tile, Map, Event, TileType, Size
+from engine import Map, Event, TileType
 from entities import PlayerEntity
 
 class Renderer:
@@ -32,10 +32,11 @@ class Renderer:
         self.render()
         key = self.mapscr.getkey()
         input_response = self._controller.handle_input(key)
-        if input_response and input_response.event != Event.NULL:
+        if input_response:
             print(f"IR: {input_response}")
-            self._map.move_entity(input_response.from_pos, input_response.to_pos)
-            self._map.handle_event(input_response.event, input_response.to_tile)
+            if input_response.event != Event.NULL:
+                self._map.move_entity(input_response.from_pos, input_response.to_pos)
+                self._map.handle_event(input_response.event, input_response.to_tile)
             self._map.entities_step()
 
                 
@@ -44,10 +45,12 @@ class Renderer:
         self.infoscr.clear()
 
     def shutdown(self):
+        self.clear()
         curses.nocbreak()
         self.mapscr.keypad(False)
         curses.echo()
         curses.endwin()
+        quit()
 
     def _get_infoscr_text(self):
         return [
@@ -60,8 +63,6 @@ class Renderer:
     def render(self):
         # Render map
         for i, y in enumerate(self._map.state):
-          # print(y[0].type)
-          # print(self.tile_render_map[y[0].type])
           line = "".join(map(lambda tile: self.tile_render_map[tile.type], y))
           self.mapscr.addstr(i, 0, line)
         texts = self._get_infoscr_text()
@@ -71,14 +72,3 @@ class Renderer:
             self.infoscr.addstr(i+1, 0, texts[i])
         self.mapscr.refresh()
         self.infoscr.refresh()
-
-def test_renderer():
-    map = Map(Size(72, 15))
-    player = PlayerEntity(100,10)
-    controller = Controller(map, player)
-    renderer = Renderer(controller, map, player)
-    map.renderer = renderer
-    map.initialize_game(player)
-
-
-test_renderer()

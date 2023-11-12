@@ -61,4 +61,4 @@ class Controller:
         player_pos = self._map._find_tiles(TileType.PLAYER)[0]
         if key in key_to_direction:
             return self._check_valid_move(player_pos, key_to_direction[key])
-        
+        return InputResponse(Event.NULL, None, None, None)
