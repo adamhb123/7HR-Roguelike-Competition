@@ -130,7 +130,8 @@ class Map:
             if player.entity.health <= 0:
                 return -1
             elif tile.entity.health <= 0:
-                self.state[tile_pos.y][tile_pos.x] = EmptyTileSingleton
+                print(tile)
+                #self.state[tile_pos.y][tile_pos.x] = EmptyTileSingleton
                 player.entity.gold += tile.entity.drop()
         elif event == Event.PICKUP:
             print("EVENT PICKUP: ", tile)
