@@ -7,7 +7,15 @@ key_to_direction = {
     "w" : 0, # Up
     "d" : 1, # Right
     "s" : 2, # Down
-    "a" : 3  # Left
+    "a" : 3,  # Left
+    "W" : 0, # Up
+    "D" : 1, # Right
+    "S" : 2, # Down
+    "A" : 3,  # Left
+    "KEY_UP" : 0, # Up
+    "KEY_RIGHT" : 1, # Right
+    "KEY_DOWN" : 2, # Down
+    "KEY_LEFT" : 3,  # Left
 }
 
 @dataclass
