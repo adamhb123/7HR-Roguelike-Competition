@@ -38,9 +38,6 @@ class Renderer:
             self._map.handle_event(input_response.event, input_response.to_tile, input_response.to_pos)
             self._map.entities_step()
 
-    def render_loop(self):
-        while True:
-            self.render_step()
                 
     def clear(self):
         self.mapscr.clear()
@@ -77,18 +74,11 @@ class Renderer:
 
 def test_renderer():
     map = Map(Size(72, 15))
-    map.generate_rooms(1000,(2,5),(2,5))
     player = PlayerEntity(100,10)
-    map._place_entity_randomly(Tile(TileType.PLAYER, player))
-    map.generate_enemies(5)
     controller = Controller(map, player)
     renderer = Renderer(controller, map, player)
-    map._place_entity_randomly(Tile(TileType.KEY))
-    map._place_entity_randomly(Tile(TileType.GOLD))
-    map.generate_corridors(debug_render_step_func=renderer.render_step)
-    
+    map.renderer = renderer
+    map.initialize_game(player)
 
-    renderer.render_loop()
-    
 
 test_renderer()

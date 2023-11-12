@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 import time
 from typing import List, Optional, Tuple
-from entities import EnemyEntity, Entity
+from entities import EnemyEntity, Entity, PlayerEntity
 
 @dataclass
 class Position:
@@ -89,6 +89,7 @@ class Map:
         self.reset_state()
 
     def reset_state(self):
+        self.rooms.clear()
         self.state = [[FillTileSingleton for x in range(0, self.size.w)] for y in range(0, self.size.h)]
 
     def entities_step(self):
@@ -113,7 +114,17 @@ class Map:
                 enemy = self.state[enemy_pos.y][enemy_pos.x]
                 self.handle_event(Event.BATTLE, enemy, enemy_pos)
             self.move_entity(enemy_pos, new_pos)
-            
+    
+    def initialize_game(self, player_entity):
+        self.reset_state()
+        print("INIT GAAME")
+        self.generate_rooms(1000,(2,5),(2,5))
+        self._place_entity_randomly(Tile(TileType.PLAYER, player_entity))
+        self.generate_enemies(5)
+        self._place_entity_randomly(Tile(TileType.KEY))
+        self._place_entity_randomly(Tile(TileType.GOLD))
+        self.generate_corridors(self.renderer.render_step)
+
 
     def handle_event(self, event: Event, tile: Tile, tile_pos: Position):
         # Here, we assume that the event is between the PLAYER and some other TILE
@@ -139,14 +150,10 @@ class Map:
             if tile.type == TileType.KEY:
                 player.entity.keys += 1
                 print(f"PE KEYS: {player.entity.keys}")
+                self.initialize_game(player.entity)
             elif tile.type == TileType.GOLD:
                 player.entity.gold += 1
 
-        
-
-    def time_step(self, player_pos: Position, to_tile: TileType | int, to: Position):
-        self._map.move_entity(player_pos.x, player_pos.y, to.x, to.y)
-        self.entities_step()
 
     def _carve(self, position: Position):
         if self.get_tile_at(position).type == TileType.FILL:
@@ -220,7 +227,7 @@ class Map:
             self._place_room_randomly(Size(random.randint(width_range[0], width_range[1]),
                             random.randint(height_range[0], height_range[1])))
 
-    def generate_corridors(self, debug_render_step_func):
+    def generate_corridors(self, render_step):
         rooms = sorted(self.rooms, key=lambda room: room.position.y)
         for i in range(len(rooms)):
             for j in range(len(rooms)):
@@ -270,8 +277,10 @@ class Map:
                         while point_b.x != x:
                             self._carve(point_b)
                             point_b.x -= 1
-                debug_render_step_func()
-                
+                result = render_step()
+                if result == -1: # Triggers game reset
+                    return
+
     def generate_enemies(self, n: int):
         for i in range(0, n):
             enemy = EnemyEntity(10, 10, (2,5))
