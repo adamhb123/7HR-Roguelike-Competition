@@ -31,10 +31,9 @@ class Renderer:
         self.clear()
         self.render()
         key = self.mapscr.getkey()
-        print(key)
         input_response = self._controller.handle_input(key)
-        print(input_response)
         if input_response and input_response.event != Event.NULL:
+            print(f"IR: {input_response}")
             self._map.move_entity(input_response.from_pos, input_response.to_pos)
             self._map.handle_event(input_response.event, input_response.to_tile, input_response.to_pos)
             self._map.entities_step()
@@ -84,7 +83,11 @@ def test_renderer():
     map.generate_enemies(5)
     controller = Controller(map, player)
     renderer = Renderer(controller, map, player)
+    map._place_entity_randomly(Tile(TileType.KEY))
+    map._place_entity_randomly(Tile(TileType.GOLD))
     map.generate_corridors(debug_render_step_func=renderer.render_step)
+    
+
     renderer.render_loop()
     
 

@@ -59,7 +59,6 @@ class Controller:
         
     def handle_input(self, key: str) -> Optional[InputResponse]:
         player_pos = self._map._find_tiles(TileType.PLAYER)[0]
-        print("Key to dir: ", key)
         if key in key_to_direction:
             return self._check_valid_move(player_pos, key_to_direction[key])
         

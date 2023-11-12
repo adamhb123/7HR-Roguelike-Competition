@@ -109,14 +109,42 @@ class Map:
                     new_pos.y += 1
                 elif dist_y < 0:
                     new_pos.y -= 1
+            if new_pos == player_pos:
+                enemy = self.state[enemy_pos.y][enemy_pos.x]
+                self.handle_event(Event.BATTLE, enemy, enemy_pos)
             self.move_entity(enemy_pos, new_pos)
             
 
-    def handle_event(self, event: Event, tile: TileType, tile_pos: Position):
+    def handle_event(self, event: Event, tile: Tile, tile_pos: Position):
+        # Here, we assume that the event is between the PLAYER and some other TILE
+        # The other tile is provided using the tile_type and tile_pos and variables
+        player_pos = self._find_tiles(TileType.PLAYER)[0]
+        player = self.state[player_pos.y][player_pos.x]
         if event == Event.BATTLE:
-            pass
+            # tile = enemy
+            while player.entity.health > 0 and tile.entity.health > 0:
+                if random.random() > .5:
+                    player.entity.attack(tile.entity)
+                else:
+                    tile.entity.attack(player.entity)
+            if player.entity.health <= 0:
+                return -1
+            elif tile.entity.health <= 0:
+                self.state[tile_pos.y][tile_pos.x] = EmptyTileSingleton
+                player.entity.gold += tile.entity.drop()
         elif event == Event.PICKUP:
-            pass
+            print("EVENT PICKUP: ", tile)
+            print("IS KEY? ", tile.type == TileType.KEY)
+            if tile.type == TileType.KEY:
+                player.entity.keys += 1
+                print(f"PE KEYS: {player.entity.keys}")
+                #self.state[tile_pos.y][tile_pos.x] = EmptyTileSingleton
+            elif tile.type == TileType.GOLD:
+                player.entity.gold += 1
+                #self.state[tile_pos.y][tile_pos.x] = EmptyTileSingleton
+
+        
+
     def time_step(self, player_pos: Position, to_tile: TileType | int, to: Position):
         self._map.move_entity(player_pos.x, player_pos.y, to.x, to.y)
         self.entities_step()
@@ -182,9 +210,11 @@ class Map:
         return self.state[position.y][position.x]
     
     def move_entity(self, from_position: Position, to_position: Position):
-        
-        self.state[to_position.y][to_position.x] = self.state[from_position.y][from_position.x]
-        self.state[from_position.y][from_position.x] = EmptyTileSingleton
+        to_tile = self.get_tile_at(to_position)
+        if to_tile.type != TileType.PLAYER:
+            print(to_tile.type)
+            self.state[to_position.y][to_position.x] = self.state[from_position.y][from_position.x]
+            self.state[from_position.y][from_position.x] = EmptyTileSingleton
 
     def generate_rooms(self, n_attempts: int, width_range: Tuple[int, int], height_range: Tuple[int, int]):
         for _ in range(0, n_attempts):
@@ -200,7 +230,7 @@ class Map:
                 if room_a != room_b:
                     h_check = room_a.position.x + room_a.size.w < room_b.position.x or room_b.position.x + room_b.size.w < room_a.position.x
                     v_check = room_a.position.y + room_a.size.h < room_b.position.y or room_b.position.y + room_b.size.h < room_a.position.y
-                    print(room_a, room_b, v_check, h_check)
+                   #  print(room_a, room_b, v_check, h_check)
                     if v_check and h_check:
                         direction = random.randint(0,1)
                     elif v_check:
@@ -214,17 +244,17 @@ class Map:
                         #y = random.randint(room_a.position.)
                         if room_a.position.y > room_b.position.y:
                            room_a, room_b = room_b, room_a
-                        print(room_a, room_b)
+                        # print(room_a, room_b)
                         y = random.randint(room_a.position.y + room_a.size.h, room_b.position.y)
                         point_a = Position(room_a.position.x + random.randint(0, room_a.size.w),
                                         room_a.position.y + room_a.size.h)
                         point_b = Position(room_b.position.x + random.randint(0, room_b.size.w), room_b.position.y)
                         while point_a.y != y:
-                            print(point_a.y, y)
+                            # print(point_a.y, y)
                             self._carve(point_a)
                             point_a.y += 1
                         while point_b.y != y:
-                            print(point_b.y, y)
+                            # print(point_b.y, y)
                             self._carve(point_b)
                             point_b.y -= 1
                     elif direction == 1: # Then horizontal
