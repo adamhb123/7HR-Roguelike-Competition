@@ -1,13 +1,16 @@
 import random
 from dataclasses import dataclass
 from enum import Enum
+import time
 from typing import List, Optional, Tuple
-from entities import Entity
+from entities import EnemyEntity, Entity
 
 @dataclass
 class Position:
     x: int
     y: int
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y
 
 @dataclass
 class Size:
@@ -22,6 +25,9 @@ class Rect:
     """
     position: Position
     size: Size
+    def __eq__(self, other: 'Rect'):
+        # Positions should be enough for equality, as Rects should not overlap in our usecase
+        return self.position.x == other.position.x and self.position.y == other.position.y
     def __repr__(self):
         return f"[RECT] x: {self.position.x} y: {self.position.y} w: {self.size.w} h: {self.size.h}"
     def collides(self, rect: "Rect" | List["Rect"], padding: int=1) -> bool | List[bool]:
@@ -87,8 +93,24 @@ class Map:
 
     def entities_step(self):
         entities = self._find_tiles(TileType.ENEMY)
+        player_pos = self._find_tiles(TileType.PLAYER)[0]
         # Calculate shortest path for enemies, move them along path
-
+        for enemy_pos in entities:
+            new_pos = Position(enemy_pos.x, enemy_pos.y)
+            dist_x = player_pos.x - enemy_pos.x
+            dist_y = player_pos.y - enemy_pos.y
+            if abs(dist_x) > abs(dist_y):
+                if dist_x > 0:
+                    new_pos.x += 1
+                elif dist_x < 0:
+                    new_pos.x -= 1
+            else:
+                if dist_y > 0:
+                    new_pos.y += 1
+                elif dist_y < 0:
+                    new_pos.y -= 1
+            self.move_entity(enemy_pos, new_pos)
+            
 
     def handle_event(self, event: Event, tile: TileType, tile_pos: Position):
         if event == Event.BATTLE:
@@ -98,6 +120,11 @@ class Map:
     def time_step(self, player_pos: Position, to_tile: TileType | int, to: Position):
         self._map.move_entity(player_pos.x, player_pos.y, to.x, to.y)
         self.entities_step()
+
+    def _carve(self, position: Position):
+        if self.get_tile_at(position).type == TileType.FILL:
+            self.state[position.y][position.x] = EmptyTileSingleton
+
 
     def _update_rooms(self):
         for room in self.rooms:
@@ -113,7 +140,7 @@ class Map:
             # Carve room
             for y in range(room.position.y, room.position.y+room.size.h):
                 for x in range(room.position.x, room.position.x+room.size.w):
-                    self.state[y][x] = EmptyTileSingleton
+                    self._carve(Position(x,y))
 
     def _place_room(self, position: Position, size: Size):
         new_room = Rect(position, size)
@@ -121,7 +148,7 @@ class Map:
             #print(f"Can't place room: {new_room}")
             return False
         self.rooms.append(new_room)
-        print(new_room)
+        # print(new_room)
         self._update_rooms()
         return True
     
@@ -142,7 +169,7 @@ class Map:
 
     def _place_entity_randomly(self, entity_tile: Tile, max_attempts: int = 10000):
         for _ in range(max_attempts):
-            if self._place_entity(Position(random.randint(0,self.size.w), random.randint(0, self.size.h)), entity_tile):
+            if self._place_entity(Position(random.randint(0,self.size.w-1), random.randint(0, self.size.h-1)), entity_tile):
                 return True
         return False
 
@@ -155,6 +182,7 @@ class Map:
         return self.state[position.y][position.x]
     
     def move_entity(self, from_position: Position, to_position: Position):
+        
         self.state[to_position.y][to_position.x] = self.state[from_position.y][from_position.x]
         self.state[from_position.y][from_position.x] = EmptyTileSingleton
 
@@ -163,7 +191,61 @@ class Map:
             self._place_room_randomly(Size(random.randint(width_range[0], width_range[1]),
                             random.randint(height_range[0], height_range[1])))
 
-    def generate_corridors(self):
-        pass
+    def generate_corridors(self, debug_render_step_func):
+        rooms = sorted(self.rooms, key=lambda room: room.position.y)
+        for i in range(len(rooms)):
+            for j in range(len(rooms)):
+                i=0
+                room_a, room_b = rooms[i], rooms[j]
+                if room_a != room_b:
+                    h_check = room_a.position.x + room_a.size.w < room_b.position.x or room_b.position.x + room_b.size.w < room_a.position.x
+                    v_check = room_a.position.y + room_a.size.h < room_b.position.y or room_b.position.y + room_b.size.h < room_a.position.y
+                    print(room_a, room_b, v_check, h_check)
+                    if v_check and h_check:
+                        direction = random.randint(0,1)
+                    elif v_check:
+                        direction = 0
+                    elif h_check:
+                        direction = 1
+                    else:
+                        continue
+                    if direction == 0: # Then vertical
+                        # Pick random y coordinate between rooms
+                        #y = random.randint(room_a.position.)
+                        if room_a.position.y > room_b.position.y:
+                           room_a, room_b = room_b, room_a
+                        print(room_a, room_b)
+                        y = random.randint(room_a.position.y + room_a.size.h, room_b.position.y)
+                        point_a = Position(room_a.position.x + random.randint(0, room_a.size.w),
+                                        room_a.position.y + room_a.size.h)
+                        point_b = Position(room_b.position.x + random.randint(0, room_b.size.w), room_b.position.y)
+                        while point_a.y != y:
+                            print(point_a.y, y)
+                            self._carve(point_a)
+                            point_a.y += 1
+                        while point_b.y != y:
+                            print(point_b.y, y)
+                            self._carve(point_b)
+                            point_b.y -= 1
+                    elif direction == 1: # Then horizontal
+                        if room_a.position.x > room_b.position.x:
+                            room_a, room_b = room_b, room_a
+                        # Pick random x coordinate between rooms
+                        x = random.randint(room_a.position.x + room_a.size.w, room_b.position.x)
+                        point_a = Position(room_a.position.x + room_a.size.w,
+                                           room_a.position.y + random.randint(0, room_a.size.h))
+                        point_b = Position(room_b.position.x, room_b.position.y + random.randint(0, room_b.size.h))
+                        while point_a.x != x:
+                            self._carve(point_a)
+                            point_a.x += 1
+                        while point_b.x != x:
+                            self._carve(point_b)
+                            point_b.x -= 1
+                debug_render_step_func()
+                
+    def generate_enemies(self, n: int):
+        for i in range(0, n):
+            enemy = EnemyEntity(10, 10, (2,5))
+            self._place_entity_randomly(Tile(TileType.ENEMY, enemy))
 
         
