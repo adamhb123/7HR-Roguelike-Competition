@@ -43,7 +43,9 @@ class Controller:
             to.y = start_pos.y+1
         elif direction == 3: # LEFT
             to.x = start_pos.x-1
-
+        if to.x < 0 or to.y < 0  or to.x > self._map.size.w-1 or to.y > self._map.size.h-1:
+            return InputResponse(Event.NULL, None, None, None)
+            
         tile = self._map.get_tile_at(to)
 
         if tile.type == TileType.EMPTY:
