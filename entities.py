@@ -24,6 +24,7 @@ class PlayerEntity(CharacterEntity):
 @dataclass
 class EnemyEntity(CharacterEntity):
     gold_drop_range: Tuple[int] # Gold drops
+    stole_key: bool=False
     def drop(self):
         return random.randint(self.gold_drop_range[0], self.gold_drop_range[1])
     

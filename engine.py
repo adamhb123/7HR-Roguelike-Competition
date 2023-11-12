@@ -110,14 +110,17 @@ class Map:
                     new_pos.y += 1
                 elif dist_y < 0:
                     new_pos.y -= 1
+            enemy = self.state[enemy_pos.y][enemy_pos.x]
             if new_pos == player_pos:
-                enemy = self.state[enemy_pos.y][enemy_pos.x]
-                self.handle_event(Event.BATTLE, enemy, enemy_pos)
-            self.move_entity(enemy_pos, new_pos)
+                self.handle_event(Event.BATTLE, enemy)
+            next_tile = self.get_tile_at(new_pos)
+            if next_tile.type == TileType.KEY:
+                enemy.entity.stole_key = True
+            if next_tile.type in [TileType.KEY, TileType.EMPTY]:
+                self.move_entity(enemy_pos, new_pos)
     
     def initialize_game(self, player_entity):
         self.reset_state()
-        print("INIT GAAME")
         self.generate_rooms(1000,(2,5),(2,5))
         self._place_entity_randomly(Tile(TileType.PLAYER, player_entity))
         self.generate_enemies(5)
@@ -126,7 +129,7 @@ class Map:
         self.generate_corridors(self.renderer.render_step)
 
 
-    def handle_event(self, event: Event, tile: Tile, tile_pos: Position):
+    def handle_event(self, event: Event, tile: Tile):
         # Here, we assume that the event is between the PLAYER and some other TILE
         # The other tile is provided using the tile_type and tile_pos and variables
         player_pos = self._find_tiles(TileType.PLAYER)[0]
@@ -144,6 +147,8 @@ class Map:
                 print(tile)
                 #self.state[tile_pos.y][tile_pos.x] = EmptyTileSingleton
                 player.entity.gold += tile.entity.drop()
+                if tile.entity.stole_key:
+                    self.handle_event(Event.PICKUP, Tile(TileType.KEY))
         elif event == Event.PICKUP:
             print("EVENT PICKUP: ", tile)
             print("IS KEY? ", tile.type == TileType.KEY)

@@ -35,7 +35,7 @@ class Renderer:
         if input_response and input_response.event != Event.NULL:
             print(f"IR: {input_response}")
             self._map.move_entity(input_response.from_pos, input_response.to_pos)
-            self._map.handle_event(input_response.event, input_response.to_tile, input_response.to_pos)
+            self._map.handle_event(input_response.event, input_response.to_tile)
             self._map.entities_step()
 
                 
