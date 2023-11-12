@@ -116,7 +116,12 @@ class Map:
             next_tile = self.get_tile_at(new_pos)
             if next_tile.type == TileType.KEY:
                 enemy.entity.stole_key = True
-            if next_tile.type in [TileType.KEY, TileType.EMPTY]:
+            if next_tile.type == TileType.GOLD:
+                enemy.entity.gold_drop_range = (
+                    enemy.entity.gold_drop_range[0] + 1,
+                    enemy.entity.gold_drop_range[1] + 1
+                )
+            if next_tile.type in [TileType.KEY, TileType.GOLD, TileType.EMPTY]:
                 self.move_entity(enemy_pos, new_pos)
     
     def initialize_game(self, player_entity):
